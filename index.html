@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dumb Backend Dev's Guide to Babylon.js</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #f97316;
+    --accent2: #3b82f6;
+    --accent3: #a855f7;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+    --success: #22c55e;
+    --warn: #eab308;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(249,115,22,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(249,115,22,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 2rem;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--accent);
+    display: inline-block;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    max-width: 900px;
+    animation: slideUp 0.8s ease;
+  }
+
+  .hero h1 span.orange { color: var(--accent); }
+  .hero h1 span.blue { color: var(--accent2); }
+
+  .hero-sub {
+    margin-top: 1.5rem;
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 600px;
+    animation: slideUp 1s ease;
+  }
+
+  .hero-sub strong { color: var(--text); }
+
+  .scroll-hint {
+    margin-top: 4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    animation: bounce 2s infinite;
+  }
+
+  /* 3D CANVAS DEMO */
+  .canvas-wrapper {
+    width: 280px;
+    height: 180px;
+    margin: 2.5rem auto 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    background: var(--code-bg);
+  }
+
+  canvas#miniDemo {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .canvas-label {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SECTIONS */
+  .section {
+    padding: 5rem 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .section h2 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+  }
+
+  .section h2 .hl { color: var(--accent); }
+  .section h2 .hl2 { color: var(--accent2); }
+  .section h2 .hl3 { color: var(--accent3); }
+
+  .lead {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 2.5rem;
+    max-width: 680px;
+  }
+
+  /* ANALOGY CARDS */
+  .analogy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+
+  .analogy-card {
+    background: var(--surface);
+    padding: 1.5rem;
+    transition: background 0.2s;
+  }
+
+  .analogy-card:hover { background: #16161f; }
+
+  .analogy-card .backend {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--success);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.3rem;
+  }
+
+  .analogy-card .arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin: 0.5rem 0;
+  }
+
+  .analogy-card .frontend {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.3rem;
+  }
+
+  .analogy-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .analogy-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .code-label {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre;
+  }
+
+  .kw { color: #c792ea; }   /* keywords */
+  .fn { color: #82aaff; }   /* functions */
+  .str { color: #c3e88d; }  /* strings */
+  .num { color: #f78c6c; }  /* numbers */
+  .cm { color: #546e7a; font-style: italic; }  /* comments */
+  .cls { color: #ffcb6b; }  /* classes */
+  .prop { color: #89ddff; } /* properties */
+
+  /* CONCEPT EXPLAINERS */
+  .concept-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 600px) {
+    .concept-row { grid-template-columns: 1fr; }
+  }
+
+  .concept-cell {
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .concept-cell.header {
+    background: #0d0d14;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .concept-cell.header .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .concept-cell h4 {
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .concept-cell p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* PIPELINE DIAGRAM */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 2rem 0;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .pipe-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    min-width: 130px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .pipe-step .pipe-icon {
+    font-size: 1.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .pipe-step .pipe-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.2rem;
+  }
+
+  .pipe-step p {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .pipe-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--border);
+    font-size: 1.5rem;
+    padding: 0 0.25rem;
+    flex-shrink: 0;
+  }
+
+  /* GOTCHA BOXES */
+  .gotcha {
+    border: 1px solid var(--warn);
+    background: rgba(234, 179, 8, 0.05);
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .gotcha-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .gotcha-body h4 {
+    font-size: 0.9rem;
+    color: var(--warn);
+    margin-bottom: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .gotcha-body p {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .tip {
+    border-color: var(--success);
+    background: rgba(34, 197, 94, 0.05);
+  }
+
+  .tip .gotcha-body h4 { color: var(--success); }
+
+  /* NAV */
+  .toc {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 100;
+  }
+
+  @media (max-width: 1200px) { .toc { display: none; } }
+
+  .toc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--muted);
+  }
+
+  .toc-dot:hover, .toc-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.3);
+  }
+
+  /* HIGHLIGHT BOXES */
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(59,130,246,0.05) 100%);
+    border: 1px solid rgba(249,115,22,0.2);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+  }
+
+  .highlight-box h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+  }
+
+  .highlight-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .highlight-box li {
+    font-size: 0.88rem;
+    color: var(--muted);
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .highlight-box li::before {
+    content: '→';
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 2rem;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.1em;
+  }
+
+  footer span { color: var(--accent); }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* INTERACTIVE TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+
+  .tab-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* CHEATSHEET */
+  .cheat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .cheat-item {
+    background: var(--surface);
+    padding: 1rem 1.25rem;
+  }
+
+  .cheat-item .cheat-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    margin-bottom: 0.3rem;
+  }
+
+  .cheat-item p {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* NUMBER CALLOUTS */
+  .callout-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+
+  .callout {
+    background: var(--surface);
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .callout .big {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .callout p {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- TOC Dots -->
+<nav class="toc" id="toc">
+  <div class="toc-dot active" onclick="scrollTo(0,0)" title="Top"></div>
+  <div class="toc-dot" onclick="document.getElementById('s1').scrollIntoView({behavior:'smooth'})" title="Mental Model"></div>
+  <div class="toc-dot" onclick="document.getElementById('s2').scrollIntoView({behavior:'smooth'})" title="Core Concepts"></div>
+  <div class="toc-dot" onclick="document.getElementById('s3').scrollIntoView({behavior:'smooth'})" title="The Scene"></div>
+  <div class="toc-dot" onclick="document.getElementById('s4').scrollIntoView({behavior:'smooth'})" title="Meshes"></div>
+  <div class="toc-dot" onclick="document.getElementById('s5').scrollIntoView({behavior:'smooth'})" title="Lights & Camera"></div>
+  <div class="toc-dot" onclick="document.getElementById('s6').scrollIntoView({behavior:'smooth'})" title="Materials"></div>
+  <div class="toc-dot" onclick="document.getElementById('s7').scrollIntoView({behavior:'smooth'})" title="Animation"></div>
+  <div class="toc-dot" onclick="document.getElementById('s8').scrollIntoView({behavior:'smooth'})" title="Gotchas"></div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div style="position:relative;z-index:1;">
+    <div class="hero-tag">// survival guide v1.0</div>
+    <h1>The <span class="orange">Dumb</span> Backend Dev's Guide to <span class="blue">Babylon.js</span> & 3D</h1>
+    <p class="hero-sub">You write APIs for a living. Now someone put you in charge of a <strong>3D experience</strong>. This guide translates everything into terms that won't make your brain hurt.</p>
+
+    <!-- Mini live 3D demo using pure CSS/canvas -->
+    <div class="canvas-wrapper">
+      <canvas id="miniDemo"></canvas>
+      <div class="canvas-label">live render // 60fps</div>
+    </div>
+
+    <p class="scroll-hint">↓ SCROLL TO SURVIVE ↓</p>
+  </div>
+</div>
+
+<!-- SECTION 1: Mental Model -->
+<section class="section" id="s1">
+  <div class="container">
+    <div class="section-num">// 01</div>
+    <h2>The <span class="hl">Mental Model</span> — It's Just a Server, Differently Shaped</h2>
+    <p class="lead">You already know how to think about complex systems. 3D is just another system. Here's your Rosetta Stone.</p>
+
+    <div class="analogy-grid">
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Database → Scene</h3>
+        <p>The <strong>Scene</strong> is your database. Everything lives in it — objects, lights, cameras. It's the root container for your entire 3D world.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>ORM Model → Mesh</h3>
+        <p>A <strong>Mesh</strong> is a 3D object — like a model/entity in your ORM. It has position, rotation, and references to a geometry (shape) and material (appearance).</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Schema → Geometry</h3>
+        <p>The <strong>Geometry</strong> (VertexData) defines the shape — like a DB schema defines structure. It's vertices and triangles. You usually don't touch this directly.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>CSS/Styles → Material</h3>
+        <p>A <strong>Material</strong> controls appearance: color, texture, shininess, transparency. Assign one material to many meshes — like a CSS class.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Request Context → Camera</h3>
+        <p>The <strong>Camera</strong> is your viewport — the "point of view" from which the scene is rendered. No camera = nothing renders. There's always exactly one active.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Environment Vars → Lights</h3>
+        <p><strong>Lights</strong> illuminate the scene. No light = everything is pitch black (or flat, no shadows). They set the "ambient" conditions your objects live in.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Event Loop → Render Loop</h3>
+        <p>The <strong>render loop</strong> (engine.runRenderLoop) is your main event loop. It runs at 60fps, updating and re-drawing the scene every frame.</p>
+      </div>
+      <div class="analogy-card">
+        <div class="backend">your world</div>
+        <div class="arrow">──────────────</div>
+        <div class="frontend">3d world</div>
+        <h3>Middleware → Observable</h3>
+        <p><strong>Observables</strong> are Babylon's event system — like Express middleware or event emitters. scene.onBeforeRenderObservable.add(() =&gt; ...) runs every frame.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: 3D Space 101 -->
+<section class="section" id="s2">
+  <div class="container">
+    <div class="section-num">// 02</div>
+    <h2>3D Space <span class="hl2">101</span> — The Boring Maths You Actually Need</h2>
+    <p class="lead">You can't avoid vectors. Sorry. But this is all of it — nothing more is required to get productive.</p>
+
+    <div class="concept-row">
+      <div class="concept-cell header"><div class="dot"></div>Concept</div>
+      <div class="concept-cell header"><div class="dot" style="background:var(--accent2)"></div>What it means</div>
+
+      <div class="concept-cell"><h4>Vector3(x, y, z)</h4></div>
+      <div class="concept-cell"><p>A point in 3D space OR a direction. Think of it like coordinates(lat, lng, altitude). X = left/right. Y = up/down. Z = forward/back. That's it.</p></div>
+
+      <div class="concept-cell"><h4>position</h4></div>
+      <div class="concept-cell"><p>Where the mesh is in the world. mesh.position = new Vector3(0, 1, 5) puts it at x=0, y=1 (1 unit up), z=5 (5 units forward).</p></div>
+
+      <div class="concept-cell"><h4>rotation</h4></div>
+      <div class="concept-cell"><p>How it's rotated, in radians. mesh.rotation.y = Math.PI / 2 rotates it 90° around the Y axis (spins left/right). Use Tools.ToRadians(90) if you hate radians.</p></div>
+
+      <div class="concept-cell"><h4>scaling</h4></div>
+      <div class="concept-cell"><p>How big it is. mesh.scaling = new Vector3(2, 2, 2) makes it 2x larger in all directions. Like CSS transform: scale().</p></div>
+
+      <div class="concept-cell"><h4>parent</h4></div>
+      <div class="concept-cell"><p>mesh.parent = otherMesh makes position/rotation relative to parent. Like CSS position: relative inside a container. Move the parent, children follow.</p></div>
+
+      <div class="concept-cell"><h4>World vs Local space</h4></div>
+      <div class="concept-cell"><p>"World" = absolute position in the scene. "Local" = relative to the object's own orientation. When an object is rotated, its local axes rotate with it.</p></div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// GOTCHA: Y-up vs Z-up</h4>
+        <p>Babylon.js uses a <strong>left-handed, Y-up</strong> coordinate system. Y is up. Z goes INTO the screen (away from you). If you import assets from Blender (Z-up), you may need to rotate them. This trips everyone up.</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // vectors</div>
+      <pre>
+<cm>// Think of Vector3 like a struct/tuple with x, y, z</cm>
+<kw>const</kw> pos = <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, <num>5</num>, <num>10</num>);
+
+<cm>// Move a mesh</cm>
+mesh.<prop>position</prop>.<prop>x</prop> += <num>0.1</num>;          <cm>// move right a bit</cm>
+mesh.<prop>position</prop> = <cls>BABYLON</cls>.<cls>Vector3</cls>.<fn>Zero</fn>(); <cm>// reset to origin</cm>
+
+<cm>// Rotate (radians, not degrees!)</cm>
+mesh.<prop>rotation</prop>.<prop>y</prop> = <cls>BABYLON</cls>.<cls>Tools</cls>.<fn>ToRadians</fn>(<num>45</num>); <cm>// 45°</cm>
+
+<cm>// Scale uniformly</cm>
+mesh.<prop>scaling</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>2</num>, <num>2</num>, <num>2</num>);</pre>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: The Scene -->
+<section class="section" id="s3">
+  <div class="container">
+    <div class="section-num">// 03</div>
+    <h2>Bootstrapping — <span class="hl">Your First Scene</span></h2>
+    <p class="lead">Here's the absolute minimum to get something rendering. Every Babylon.js app has this shape.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-icon">🖼️</div>
+        <div class="pipe-label">Canvas</div>
+        <p>HTML &lt;canvas&gt; element</p>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">⚙️</div>
+        <div class="pipe-label">Engine</div>
+        <p>WebGL renderer</p>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">🌍</div>
+        <div class="pipe-label">Scene</div>
+        <p>Your world container</p>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">📷</div>
+        <div class="pipe-label">Camera</div>
+        <p>Viewport / POV</p>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">💡</div>
+        <div class="pipe-label">Light</div>
+        <p>Illuminate things</p>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">🎮</div>
+        <div class="pipe-label">Render Loop</div>
+        <p>60fps redraw</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // minimal setup</div>
+      <pre>
+<cm>// index.html — just needs a canvas</cm>
+<cm>// &lt;canvas id="renderCanvas"&gt;&lt;/canvas&gt;</cm>
+
+<kw>const</kw> canvas = document.<fn>getElementById</fn>(<str>"renderCanvas"</str>);
+
+<cm>// Engine = the WebGL context manager. antialias=true for smoother edges</cm>
+<kw>const</kw> engine = <kw>new</kw> <cls>BABYLON</cls>.<cls>Engine</cls>(canvas, <kw>true</kw>);
+
+<cm>// Scene = your "database" — all objects registered here</cm>
+<kw>const</kw> scene = <kw>new</kw> <cls>BABYLON</cls>.<cls>Scene</cls>(engine);
+
+<cm>// Camera — ArcRotateCamera orbits around a target point (great default)</cm>
+<cm>// params: name, alpha(h-rotation), beta(v-rotation), radius, target, scene</cm>
+<kw>const</kw> camera = <kw>new</kw> <cls>BABYLON</cls>.<cls>ArcRotateCamera</cls>(
+  <str>"cam"</str>, -<cls>Math</cls>.<prop>PI</prop>/<num>2</num>, <cls>Math</cls>.<prop>PI</prop>/<num>2.5</num>, <num>10</num>,
+  <cls>BABYLON</cls>.<cls>Vector3</cls>.<fn>Zero</fn>(), scene
+);
+camera.<fn>attachControl</fn>(canvas, <kw>true</kw>); <cm>// enable mouse drag to orbit</cm>
+
+<cm>// Light — HemisphericLight is the lazy default (ambient light from above)</cm>
+<kw>const</kw> light = <kw>new</kw> <cls>BABYLON</cls>.<cls>HemisphericLight</cls>(
+  <str>"light"</str>, <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, <num>1</num>, <num>0</num>), scene
+);
+
+<cm>// Create a box mesh (it auto-registers in the scene)</cm>
+<kw>const</kw> box = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreateBox</fn>(<str>"box"</str>, { size: <num>2</num> }, scene);
+
+<cm>// THE RENDER LOOP — runs ~60 times per second</cm>
+engine.<fn>runRenderLoop</fn>(() => {
+  scene.<fn>render</fn>();
+});
+
+<cm>// Resize when window resizes (like any canvas app)</cm>
+window.<fn>addEventListener</fn>(<str>"resize"</str>, () => engine.<fn>resize</fn>());</pre>
+    </div>
+
+    <div class="tip gotcha">
+      <div class="gotcha-icon">✅</div>
+      <div class="gotcha-body">
+        <h4>// PRO TIP: Use the Babylon.js Playground</h4>
+        <p>playground.babylonjs.com is like JSFiddle but for 3D. It has all the Babylon globals pre-loaded, hot-reload, and thousands of examples. Start every experiment there before putting it in your real project.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: Meshes -->
+<section class="section" id="s4">
+  <div class="container">
+    <div class="section-num">// 04</div>
+    <h2><span class="hl3">Meshes</span> — The 3D Objects You'll Actually Work With</h2>
+    <p class="lead">MeshBuilder is your factory. It makes the common shapes so you don't have to think about geometry. Loading external models (glTF/glb) is how you get complex objects.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this, 'primitives')">Primitives</button>
+      <button class="tab-btn" onclick="switchTab(this, 'loading')">Loading Models</button>
+      <button class="tab-btn" onclick="switchTab(this, 'manipulation')">Manipulation</button>
+    </div>
+
+    <div id="primitives" class="tab-content active">
+      <div class="code-block">
+        <div class="code-label">babylon.js // mesh builder</div>
+        <pre>
+<cm>// Box — options object controls dimensions</cm>
+<kw>const</kw> box = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreateBox</fn>(<str>"box"</str>, {
+  width: <num>2</num>, height: <num>1</num>, depth: <num>3</num>
+}, scene);
+
+<cm>// Sphere</cm>
+<kw>const</kw> sphere = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreateSphere</fn>(<str>"sphere"</str>, {
+  diameter: <num>2</num>, segments: <num>32</num>  <cm>// segments = smoothness</cm>
+}, scene);
+
+<cm>// Plane (flat quad — useful for floors, billboards)</cm>
+<kw>const</kw> plane = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreatePlane</fn>(<str>"plane"</str>, {
+  width: <num>10</num>, height: <num>10</num>
+}, scene);
+
+<cm>// Ground (like plane but horizontal by default, with subdivisions)</cm>
+<kw>const</kw> ground = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreateGround</fn>(<str>"ground"</str>, {
+  width: <num>20</num>, height: <num>20</num>, subdivisions: <num>2</num>
+}, scene);
+
+<cm>// Cylinder (also makes cones)</cm>
+<kw>const</kw> cyl = <cls>BABYLON</cls>.<cls>MeshBuilder</cls>.<fn>CreateCylinder</fn>(<str>"cyl"</str>, {
+  height: <num>3</num>, diameter: <num>1</num>, tessellation: <num>16</num>
+}, scene);
+
+<cm>// All meshes created at origin (0,0,0) — move them after</cm>
+box.<prop>position</prop>.<prop>y</prop> = <num>2</num>;
+sphere.<prop>position</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>5</num>, <num>1</num>, <num>0</num>);</pre>
+      </div>
+    </div>
+
+    <div id="loading" class="tab-content">
+      <div class="code-block">
+        <div class="code-label">babylon.js // load external models (gltf/glb)</div>
+        <pre>
+<cm>// glTF is the "JPEG of 3D" — it's what you'll receive from designers</cm>
+<cm>// .glb = binary (single file), .gltf = JSON + separate texture files</cm>
+
+<cm>// Import a model — async/await style</cm>
+<kw>const</kw> result = <kw>await</kw> <cls>BABYLON</cls>.<cls>SceneLoader</cls>.<fn>ImportMeshAsync</fn>(
+  <str>""</str>,          <cm>// mesh names to load ("" = all)</cm>
+  <str>"/assets/"</str>, <cm>// folder path</cm>
+  <str>"robot.glb"</str>, <cm>// filename</cm>
+  scene
+);
+
+<cm>// result.meshes = array of all loaded meshes</cm>
+<cm>// result.animationGroups = animations baked into the file</cm>
+
+<kw>const</kw> root = result.<prop>meshes</prop>[<num>0</num>]; <cm>// root node of the hierarchy</cm>
+root.<prop>position</prop>.<prop>y</prop> = <num>0</num>;
+root.<prop>scaling</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0.01</num>, <num>0.01</num>, <num>0.01</num>); <cm>// scale down often needed</cm>
+
+<cm>// Play a baked animation</cm>
+<kw>const</kw> walkAnim = result.<prop>animationGroups</prop>.<fn>find</fn>(a => a.<prop>name</prop> === <str>"Walk"</str>);
+walkAnim.<fn>play</fn>(<kw>true</kw>); <cm>// true = loop</cm></pre>
+      </div>
+      <div class="gotcha">
+        <div class="gotcha-icon">⚠️</div>
+        <div class="gotcha-body">
+          <h4>// GOTCHA: CORS & file:// protocol</h4>
+          <p>You cannot load .glb files from the filesystem directly (CORS). Run a local dev server (Vite, live-server, etc.). This is the #1 beginner frustration.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="manipulation" class="tab-content">
+      <div class="code-block">
+        <div class="code-label">babylon.js // mesh manipulation</div>
+        <pre>
+<cm>// Clone (deep copy — separate geometry)</cm>
+<kw>const</kw> clone = mesh.<fn>clone</fn>(<str>"clone1"</str>);
+clone.<prop>position</prop>.<prop>x</prop> = <num>5</num>;
+
+<cm>// Instance (same geometry, different transform — VERY fast for many copies)</cm>
+<cm>// Like database views — reference the same data, transformed differently</cm>
+<kw>const</kw> instance = mesh.<fn>createInstance</fn>(<str>"inst1"</str>);
+instance.<prop>position</prop>.<prop>x</prop> = <num>-5</num>;
+
+<cm>// Show/hide</cm>
+mesh.<prop>isVisible</prop> = <kw>false</kw>;
+mesh.<prop>setEnabled</fn>(<kw>false</kw>); <cm>// also disables physics/events</cm>
+
+<cm>// Pick a mesh from mouse click</cm>
+scene.<fn>onPointerDown</fn> = (evt, pickResult) => {
+  <kw>if</kw> (pickResult.<prop>hit</prop>) {
+    console.<fn>log</fn>(<str>"clicked:"</str>, pickResult.<prop>pickedMesh</prop>.<prop>name</prop>);
+    pickResult.<prop>pickedMesh</prop>.<prop>material</prop>.<prop>diffuseColor</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>1</num>, <num>0</num>, <num>0</num>);
+  }
+};</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: Camera & Lights -->
+<section class="section" id="s5">
+  <div class="container">
+    <div class="section-num">// 05</div>
+    <h2>Camera & <span class="hl">Lights</span> — Setting the Stage</h2>
+    <p class="lead">Pick the right camera once and you're done. Lights are where you spend 20% of your time for 80% of the visual quality difference.</p>
+
+    <div class="concept-row">
+      <div class="concept-cell header"><div class="dot"></div>Camera Type</div>
+      <div class="concept-cell header"><div class="dot" style="background:var(--accent2)"></div>Use When</div>
+
+      <div class="concept-cell"><h4>ArcRotateCamera</h4><p style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--accent)">Most common</p></div>
+      <div class="concept-cell"><p>Orbits around a target point. Perfect for product viewers, character inspection, most 3D UIs. Mouse drag = orbit, scroll = zoom.</p></div>
+
+      <div class="concept-cell"><h4>FreeCamera</h4></div>
+      <div class="concept-cell"><p>WASD + mouse = FPS controls. Use for walkthroughs, first-person experiences. Needs camera.attachControl(canvas, true).</p></div>
+
+      <div class="concept-cell"><h4>FollowCamera</h4></div>
+      <div class="concept-cell"><p>Follows a mesh around. Set camera.lockedTarget = mesh. Great for third-person games or following animated objects.</p></div>
+
+      <div class="concept-cell"><h4>UniversalCamera</h4></div>
+      <div class="concept-cell"><p>FreeCamera + gamepad support. The "just make it work everywhere" camera. Good default if you're not sure.</p></div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // lights reference</div>
+      <pre>
+<cm>// 1. HemisphericLight — ambient, from a direction (sky/ground color)</cm>
+<cm>//    No shadows. Great as fill light or sole light for simple scenes.</cm>
+<kw>const</kw> hemi = <kw>new</kw> <cls>BABYLON</cls>.<cls>HemisphericLight</cls>(
+  <str>"hemi"</str>, <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, <num>1</num>, <num>0</num>), scene
+);
+hemi.<prop>intensity</prop> = <num>0.7</num>;
+
+<cm>// 2. DirectionalLight — like the sun. Parallel rays, can cast shadows.</cm>
+<kw>const</kw> dirLight = <kw>new</kw> <cls>BABYLON</cls>.<cls>DirectionalLight</cls>(
+  <str>"dir"</str>, <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(-<num>1</num>, -<num>2</num>, -<num>1</num>), scene
+);
+
+<cm>// 3. PointLight — light bulb. Radiates in all directions from a point.</cm>
+<kw>const</kw> point = <kw>new</kw> <cls>BABYLON</cls>.<cls>PointLight</cls>(
+  <str>"point"</str>, <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, <num>5</num>, <num>0</num>), scene
+);
+point.<prop>diffuse</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>1</num>, <num>0.8</num>, <num>0.5</num>); <cm>// warm orange</cm>
+
+<cm>// 4. SpotLight — cone of light. Like a stage spotlight.</cm>
+<kw>const</kw> spot = <kw>new</kw> <cls>BABYLON</cls>.<cls>SpotLight</cls>(
+  <str>"spot"</str>,
+  <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, <num>10</num>, <num>0</num>),  <cm>// position</cm>
+  <kw>new</kw> <cls>BABYLON</cls>.<cls>Vector3</cls>(<num>0</num>, -<num>1</num>, <num>0</num>), <cm>// direction (downward)</cm>
+  <cls>Math</cls>.<prop>PI</prop> / <num>4</num>,  <cm>// angle (cone width in radians)</cm>
+  <num>2</num>,            <cm>// exponent (edge softness)</cm>
+  scene
+);
+
+<cm>// Add shadows to a DirectionalLight</cm>
+<kw>const</kw> shadowGen = <kw>new</kw> <cls>BABYLON</cls>.<cls>ShadowGenerator</cls>(<num>1024</num>, dirLight);
+shadowGen.<fn>addShadowCaster</fn>(box); <cm>// this mesh casts shadows</cm>
+ground.<prop>receiveShadows</prop> = <kw>true</kw>; <cm>// this mesh receives shadows</cm></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: Materials -->
+<section class="section" id="s6">
+  <div class="container">
+    <div class="section-num">// 06</div>
+    <h2><span class="hl2">Materials</span> — Appearance is Everything</h2>
+    <p class="lead">Materials define what an object looks like. Think of them as "styles" you assign to meshes. One material, many meshes.</p>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // standard material</div>
+      <pre>
+<cm>// StandardMaterial — the bread-and-butter material</cm>
+<kw>const</kw> mat = <kw>new</kw> <cls>BABYLON</cls>.<cls>StandardMaterial</cls>(<str>"mat"</str>, scene);
+
+<cm>// diffuseColor = the base "lit" color (what you'd call background-color)</cm>
+mat.<prop>diffuseColor</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>0.4</num>, <num>0.6</num>, <num>1.0</num>); <cm>// RGB 0-1</cm>
+
+<cm>// emissiveColor = color that glows (not affected by lights)</cm>
+mat.<prop>emissiveColor</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>0.1</num>, <num>0.1</num>, <num>0.3</num>);
+
+<cm>// specularColor = shininess highlight color</cm>
+mat.<prop>specularColor</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>1</num>, <num>1</num>, <num>1</num>);
+mat.<prop>specularPower</prop> = <num>64</num>; <cm>// higher = smaller, sharper highlight</cm>
+
+<cm>// Transparency</cm>
+mat.<prop>alpha</prop> = <num>0.5</num>; <cm>// 0 = invisible, 1 = opaque</cm>
+
+<cm>// Wireframe (great for debugging)</cm>
+mat.<prop>wireframe</prop> = <kw>true</kw>;
+
+<cm>// Assign to mesh</cm>
+box.<prop>material</prop> = mat;
+
+<cm>// ─────────────────────────────────────────────</cm>
+
+<cm>// PBRMaterial — "Physically Based Rendering" — looks way more realistic</cm>
+<cm>// Use this for modern, high-quality scenes</cm>
+<kw>const</kw> pbr = <kw>new</kw> <cls>BABYLON</cls>.<cls>PBRMaterial</cls>(<str>"pbr"</str>, scene);
+pbr.<prop>albedoColor</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Color3</cls>(<num>0.8</num>, <num>0.2</num>, <num>0.1</num>); <cm>// base color</cm>
+pbr.<prop>metallic</prop> = <num>0.0</num>;    <cm>// 0 = plastic, 1 = metal</cm>
+pbr.<prop>roughness</prop> = <num>0.5</num>;   <cm>// 0 = mirror, 1 = matte</cm>
+sphere.<prop>material</prop> = pbr;</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // textures</div>
+      <pre>
+<cm>// Textures are image files mapped onto mesh surfaces</cm>
+<kw>const</kw> mat = <kw>new</kw> <cls>BABYLON</cls>.<cls>StandardMaterial</cls>(<str>"texMat"</str>, scene);
+
+<cm>// diffuseTexture = the main color texture (image wrapped on the mesh)</cm>
+mat.<prop>diffuseTexture</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Texture</cls>(<str>"/assets/wood.jpg"</str>, scene);
+
+<cm>// Tile the texture (useful for floors/walls)</cm>
+mat.<prop>diffuseTexture</prop>.<prop>uScale</prop> = <num>4</num>; <cm>// repeat 4x horizontally</cm>
+mat.<prop>diffuseTexture</prop>.<prop>vScale</prop> = <num>4</num>; <cm>// repeat 4x vertically</cm>
+
+<cm>// bumpTexture = normal map (fake surface detail without extra geometry)</cm>
+mat.<prop>bumpTexture</prop> = <kw>new</kw> <cls>BABYLON</cls>.<cls>Texture</cls>(<str>"/assets/wood_normal.jpg"</str>, scene);
+
+ground.<prop>material</prop> = mat;</pre>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: Animation -->
+<section class="section" id="s7">
+  <div class="container">
+    <div class="section-num">// 07</div>
+    <h2><span class="hl3">Animation</span> — Making Things Move</h2>
+    <p class="lead">There are two ways to animate: the render loop (imperative, like writing your own setInterval) and Babylon's Animation system (declarative keyframes). Know both.</p>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // render loop animation (simple)</div>
+      <pre>
+<cm>// The "just do it every frame" approach</cm>
+<cm>// Like a game loop — runs 60x per second</cm>
+
+<kw>let</kw> angle = <num>0</num>;
+
+engine.<fn>runRenderLoop</fn>(() => {
+  angle += <num>0.01</num>;
+
+  box.<prop>rotation</prop>.<prop>y</prop> = angle;      <cm>// spin the box</cm>
+  sphere.<prop>position</prop>.<prop>y</prop> = <cls>Math</cls>.<fn>sin</fn>(angle) * <num>2</num>; <cm>// bob up/down</cm>
+
+  scene.<fn>render</fn>();
+});</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-label">babylon.js // keyframe animation system</div>
+      <pre>
+<cm>// Define an animation: "position.y", 60fps, FLOAT type</cm>
+<kw>const</kw> anim = <kw>new</kw> <cls>BABYLON</cls>.<cls>Animation</cls>(
+  <str>"myAnim"</str>,
+  <str>"position.y"</str>,           <cm>// property to animate (dot notation works!)</cm>
+  <num>60</num>,                     <cm>// fps</cm>
+  <cls>BABYLON</cls>.<cls>Animation</cls>.<prop>ANIMATIONTYPE_FLOAT</prop>,
+  <cls>BABYLON</cls>.<cls>Animation</cls>.<prop>ANIMATIONLOOPMODE_CYCLE</prop> <cm>// or CONSTANT</cm>
+);
+
+<cm>// Set keyframes (like CSS @keyframes)</cm>
+anim.<fn>setKeys</fn>([
+  { frame: <num>0</num>,  value: <num>0</num> },
+  { frame: <num>30</num>, value: <num>5</num> },
+  { frame: <num>60</num>, value: <num>0</num> }
+]);
+
+<cm>// Attach and play</cm>
+box.<prop>animations</prop>.<fn>push</fn>(anim);
+scene.<fn>beginAnimation</fn>(box, <num>0</num>, <num>60</num>, <kw>true</kw>); <cm>// (target, from, to, loop)</cm>
+
+<cm>// ── Tweening with Animation.CreateAndStartAnimation ────────────────</cm>
+<cm>// Quick one-liner to animate a property to a value over time</cm>
+<cls>BABYLON</cls>.<cls>Animation</cls>.<fn>CreateAndStartAnimation</fn>(
+  <str>"move"</str>, box, <str>"position.x"</str>, <num>60</num>, <num>60</num>,
+  box.<prop>position</prop>.<prop>x</prop>, <num>10</num>,     <cm>// from, to</cm>
+  <cls>BABYLON</cls>.<cls>Animation</cls>.<prop>ANIMATIONLOOPMODE_CONSTANT</prop>
+);</pre>
+    </div>
+
+    <div class="tip gotcha">
+      <div class="gotcha-icon">✅</div>
+      <div class="gotcha-body">
+        <h4>// PRO TIP: Use scene.onBeforeRenderObservable for logic</h4>
+        <p>Put game logic / state updates in scene.onBeforeRenderObservable.add(fn) rather than inside runRenderLoop. Keeps concerns separated — rendering in the loop, logic in the observable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: Gotchas -->
+<section class="section" id="s8">
+  <div class="container">
+    <div class="section-num">// 08</div>
+    <h2>The <span class="hl">Gotchas</span> That Will Get You</h2>
+    <p class="lead">Things that tripped up every backend dev who touched 3D. Read these now, save yourself hours later.</p>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// DISPOSE everything you create</h4>
+        <p>Meshes, materials, textures — they all consume GPU memory. Call mesh.dispose(), material.dispose() when you're done with them. Unlike JS garbage collection, WebGL resources are NOT automatically freed. This is the #1 memory leak cause.</p>
+      </div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// Babylon uses Left-Handed coordinate system</h4>
+        <p>Z goes away from you (into the screen). This is opposite to OpenGL/WebGL defaults and some 3D tools like Blender (which are right-handed). When something is flipped or mirrored unexpectedly, this is probably why.</p>
+      </div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// Don't create objects inside the render loop</h4>
+        <p>new BABYLON.Mesh() inside runRenderLoop = new GPU allocation 60x per second. Your memory will explode. Create objects once, outside the loop. Only update properties inside it.</p>
+      </div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// Color3 is 0–1, not 0–255</h4>
+        <p>new BABYLON.Color3(1, 0, 0) = red. NOT Color3(255, 0, 0). Use Color3.FromHexString("#ff0000") or Color3.FromInts(255, 0, 0) if you think in 255-space.</p>
+      </div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// Async loading pitfall</h4>
+        <p>SceneLoader.ImportMeshAsync is async. If you try to reference the loaded mesh synchronously after calling it (without await), you'll get undefined. Always await it or use the callback.</p>
+      </div>
+    </div>
+
+    <div class="gotcha">
+      <div class="gotcha-icon">⚠️</div>
+      <div class="gotcha-body">
+        <h4>// Performance: draw calls</h4>
+        <p>Each mesh = 1+ draw calls to the GPU. 500+ draw calls per frame = slow. Use mesh.createInstance() for repeated objects (trees, bullets, tiles). Use BABYLON.Mesh.MergeMeshes() to combine static geometry. Check the inspector (scene.debugLayer.show()) for draw call counts.</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <h3>// Quick Cheat Sheet</h3>
+      <ul>
+        <li>Rotate: always in <strong>radians</strong>. 180° = Math.PI. 90° = Math.PI/2.</li>
+        <li>Nothing visible? Check you have a camera AND a light.</li>
+        <li>Black screen? HemisphericLight with intensity=1 is your emergency fix.</li>
+        <li>Object in wrong place? Log mesh.getAbsolutePosition() — parenting affects displayed position.</li>
+        <li>Texture not showing? Check CORS — you need a dev server.</li>
+        <li>Bad performance? Open the Babylon Inspector and check Draw Calls and Active Meshes.</li>
+        <li>Enable Inspector: scene.debugLayer.show() — it's like DevTools for your scene.</li>
+        <li>Model too big/small after import? Scale the root mesh, not individual children.</li>
+      </ul>
+    </div>
+
+    <div class="callout-row">
+      <div class="callout">
+        <div class="big">60</div>
+        <p>target FPS — your render loop budget in ms = 16.6ms per frame</p>
+      </div>
+      <div class="callout">
+        <div class="big">0→1</div>
+        <p>Color3 range — not 0–255 like CSS. You'll forget this. It's fine.</p>
+      </div>
+      <div class="callout">
+        <div class="big">Y↑</div>
+        <p>Y-axis is UP in Babylon. Z goes into the screen. Don't forget.</p>
+      </div>
+      <div class="callout">
+        <div class="big">rad</div>
+        <p>All angles are in radians. Math.PI = 180°. Bookmark it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>built for the backend dev who didn't ask for this &nbsp;·&nbsp; <span>babylon.js survival guide</span> &nbsp;·&nbsp; you got this</p>
+    <p style="margin-top:0.5rem">docs.babylonjs.com &nbsp;·&nbsp; playground.babylonjs.com &nbsp;·&nbsp; forum.babylonjs.com</p>
+  </div>
+</footer>
+
+<script>
+// ─── MINI CANVAS 3D DEMO (pure WebGL/canvas, no babylon needed) ────────────
+const canvas = document.getElementById('miniDemo');
+const ctx = canvas.getContext('2d');
+canvas.width = 280;
+canvas.height = 180;
+
+let t = 0;
+
+function project(x, y, z, fov = 250, cx = 140, cy = 90) {
+  const scale = fov / (fov + z);
+  return { x: cx + x * scale, y: cy - y * scale, s: scale };
+}
+
+function rotateY(x, z, a) {
+  return { x: x * Math.cos(a) - z * Math.sin(a), z: x * Math.sin(a) + z * Math.cos(a) };
+}
+
+function rotateX(y, z, a) {
+  return { y: y * Math.cos(a) - z * Math.sin(a), z: y * Math.sin(a) + z * Math.cos(a) };
+}
+
+const verts = [
+  [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+  [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]
+];
+
+const faces = [
+  [0,1,2,3,'#f97316'], [4,5,6,7,'#3b82f6'],
+  [0,1,5,4,'#a855f7'], [2,3,7,6,'#22c55e'],
+  [0,3,7,4,'#eab308'], [1,2,6,5,'#ef4444']
+];
+
+function drawCube() {
+  ctx.clearRect(0, 0, 280, 180);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, 280, 180);
+
+  // subtle grid
+  ctx.strokeStyle = 'rgba(249,115,22,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < 280; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 180); ctx.stroke(); }
+  for (let j = 0; j < 180; j += 20) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(280, j); ctx.stroke(); }
+
+  const s = 45;
+  const projected = verts.map(([x, y, z]) => {
+    let r = rotateY(x, z, t);
+    let r2 = rotateX(y, r.z, t * 0.4);
+    return project(r.x * s, r2.y * s, r2.z * s + 30);
+  });
+
+  // Sort faces by average Z (painter's algorithm)
+  const sorted = faces.map(([a,b,c,d,col]) => {
+    const avgZ = (verts[a][2] + verts[b][2] + verts[c][2] + verts[d][2]) / 4;
+    return { a, b, c, d, col, avgZ };
+  }).sort((x, y) => y.avgZ - x.avgZ);
+
+  sorted.forEach(({ a, b, c, d, col }) => {
+    ctx.beginPath();
+    ctx.moveTo(projected[a].x, projected[a].y);
+    ctx.lineTo(projected[b].x, projected[b].y);
+    ctx.lineTo(projected[c].x, projected[c].y);
+    ctx.lineTo(projected[d].x, projected[d].y);
+    ctx.closePath();
+    ctx.fillStyle = col + '88';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.fill();
+    ctx.stroke();
+  });
+
+  t += 0.012;
+  requestAnimationFrame(drawCube);
+}
+
+drawCube();
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(btn, id) {
+  btn.closest('.container').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.closest('.container').querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── TOC ACTIVE STATE ────────────────────────────────────────────────────────
+const sections = ['s1','s2','s3','s4','s5','s6','s7','s8'];
+const dots = document.querySelectorAll('.toc-dot');
+
+function updateToc() {
+  let active = 0;
+  sections.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < window.innerHeight / 2) active = i + 1;
+  });
+  dots.forEach((d, i) => d.classList.toggle('active', i === active));
+}
+
+window.addEventListener('scroll', updateToc);
+</script>
+</body>
+</html>
